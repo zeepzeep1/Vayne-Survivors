@@ -21,7 +21,7 @@
 const ARTIFACTS=[
  {id:'art_storm',n:'Núcleo de la Tormenta',d:'Los críticos alimentan cadenas eléctricas; +1 virote.',p:650,fee:250,from:['1037','1042','1018'],fb:'⚡',f:()=>{statikk=true;extraBolts=Math.min(6,extraBolts+1)}},
  {id:'art_hunger',n:'Ídolo Voraz',d:'+10% robo de vida y curación por bajas.',p:620,fee:250,from:['1053','1011','1036'],fb:'🩸',f:()=>{lifeSteal+=.10;BLOODKEY=true}},
- {id:'art_execution',n:'Sello del Verdugo',d'+20% daño a élites y cañones.',p:700,fee:300,from:['1038','1018','1037'],fb:'🏹',f:()=>{COLOSSUS+=.20}},
+ {id:'art_execution',n:'Sello del Verdugo',d:'+20% daño a élites y cañones.',p:700,fee:300,from:['1038','1018','1037'],fb:'🏹',f:()=>{COLOSSUS+=.20}},
  {id:'art_phantom',n:'Núcleo Fantasmal',d:'La voltereta deja una onda de choque.',p:640,fee:250,from:['1001','1042','1018'],fb:'💨',f:()=>{BOOMROLL=true}},
  {id:'art_hour',n:'Reloj de la Última Hora',d:'+1 s a Hora Final y 2 s menos de recarga.',p:720,fee:300,from:['1037','1042','1018'],fb:'⌛',f:()=>{TUNE.rDur+=1;TUNE.rCD=Math.max(30,TUNE.rCD-2)}},
  {id:'art_mark',n:'Carcaj Marcador',d:'Las bajas dejan una explosión si hay críticos en la build.',p:600,fee:220,from:['1036','1018','1037'],fb:'🎯',f:()=>{}}
