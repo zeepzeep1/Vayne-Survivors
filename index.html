@@ -1381,7 +1381,12 @@ function renderRecipeTracker(){
  const active=EVOLUTIONS.filter(e=>evoUnlocked.has(e.id)).length;toggle.textContent='🧭 TRACKER DE RECETAS · '+active+'/'+EVOLUTIONS.length;
  body.innerHTML='<div class="rt-legend">Los ingredientes en verde ya están en tu inventario o build. Las evoluciones se activan automáticamente al completar todo.</div>'+EVOLUTIONS.map(e=>{
   const ready=evoReady(e),active=evoUnlocked.has(e.id);
-  const items=e.items.map(id=>{const have=inv.includes(id);return '<div class="rt-line"><span>'+itemLabel(id)+'</span><b class="'+(have?'rt-have':'rt-missing')+'">'+(have?'✓ EN INVENTARIO':'○ FALTA')+'</b></div>'}).join('');
+  const items=e.items.map(id=>{
+   const have=inv.includes(id),def=BUILDS.find(x=>x.id===id)||ARTIFACTS.find(x=>x.id===id);
+   const main='<div class="rt-line"><span>'+itemLabel(id)+'</span><b class="'+(have?'rt-have':'rt-missing')+'">'+(have?'✓ CONSEGUIDO':'○ FALTA')+'</b></div>';
+   const components=def?.from?.map(cid=>{const got=inv.includes(cid);return '<div class="rt-line" style="padding-left:10px"><span>↳ '+itemLabel(cid)+'</span><b class="'+(got?'rt-have':'rt-missing')+'">'+(got?'✓ COMPRADO':'○ FALTA')+'</b></div>'}).join('')||'';
+   return main+components;
+  }).join('');
   const ups=Object.entries(e.up).map(([id,n])=>{const got=upLv[id]||0;return '<div class="rt-line"><span>'+upLabel(id)+' · '+got+'/'+n+'</span><b class="'+(got>=n?'rt-have':'rt-missing')+'">'+(got>=n?'✓':'+'+(n-got))+'</b></div>'}).join('');
   return '<section class="rt-card '+(ready||active?'ready':'')+'"><div class="rt-name">'+e.icon+' '+e.name+'</div><div class="rt-status '+(active?'ready':'')+'">'+(active?'✓ EVOLUCIÓN ACTIVA':ready?'¡LISTA PARA ACTIVAR!':'Progreso de receta')+'</div>'+items+ups+'<div class="rt-status">'+e.desc+'</div></section>';
  }).join('');
