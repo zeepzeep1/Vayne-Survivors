@@ -962,6 +962,45 @@ const buildHud=document.createElement('div');buildHud.id='buildSynergyHud';docum
 function updateBuildHud(){buildHud.innerHTML='<div class="bsh-title">SINERGIAS · '+buildSynergies.size+'/'+BUILD_SYNERGIES.length+'</div>'+(buildSynergies.size?BUILD_SYNERGIES.filter(x=>buildSynergies.has(x.id)).map(x=>'<div class="bsh-row"><span class="bsh-icon">'+x.icon+'</span><div><div class="bsh-name">'+x.name+'</div><div class="bsh-hint">'+x.hint+'</div></div></div>').join(''):'<div class="bsh-empty">Combina mejoras para desbloquear poderes especiales.</div>');}
 function applyBuildSynergies(){let unlocked=false;for(const syn of BUILD_SYNERGIES){if(!buildSynergies.has(syn.id)&&syn.check()){buildSynergies.add(syn.id);syn.apply();unlocked=true;ring(hero.position.x,hero.position.z,0xf5cc70,8,.55);spark(hero.position.x,1,hero.position.z,0xf5cc70,42,7,7,1.25);tone(784,.16,'triangle',.08,1.6);tone(1175,.22,'triangle',.07,1.4,.1);showMessage('¡SINERGIA: '+syn.name.toUpperCase()+'!');}}if(unlocked)updateBuildHud();}
 updateBuildHud();
+/* ---------- recetario de builds accesible desde la pantalla de mejoras ---------- */
+const buildGuideStyle=document.createElement('style');buildGuideStyle.textContent=`
+#buildGuideBtn{width:100%;margin-top:10px;background:#111d2b;border:1px solid #b69b58;color:#f5cc70;border-radius:3px;letter-spacing:.06em}
+#buildGuide{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:14px;background:#03070deF;backdrop-filter:blur(8px)}
+#buildGuide.hidden{display:none!important}
+#buildGuide .bg-card{width:min(760px,100%);max-height:min(84vh,850px);overflow:auto;border:1px solid #b69b58;background:linear-gradient(145deg,#172536,#080e16);box-shadow:0 25px 90px #000d;padding:clamp(14px,3vw,26px);color:#f5f6fa}
+#buildGuide .bg-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:-1px;background:#111c2af7;padding:3px 0 12px;border-bottom:1px solid #6d5e3f;z-index:1}
+#buildGuide h2{margin:0;color:#f5cc70;font-size:clamp(19px,3vw,27px)}
+#buildGuide .bg-sub{color:#aebed0;font-size:12px;margin-top:5px;line-height:1.5}
+#buildGuide .bg-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:10px;margin-top:14px}
+#buildGuide .bg-recipe{border:1px solid #ffffff22;border-left:3px solid #b69b58;background:#ffffff08;padding:12px}
+#buildGuide .bg-title{font-size:14px;font-weight:900;color:#f5cc70}
+#buildGuide .bg-ingredients{font-size:11px;color:#d9e5f0;line-height:1.65;margin:8px 0}
+#buildGuide .bg-effect{font-size:12px;color:#f1f5fa;line-height:1.55}
+#buildGuide .bg-status{font-size:10px;color:#aab9c8;margin-top:8px;padding-top:7px;border-top:1px solid #ffffff16}
+#buildGuide .bg-status.ready{color:#8df0c4}
+#buildGuide .bg-close{padding:8px 12px;background:#202e3c;border:1px solid #b69b58;color:#f5cc70;white-space:nowrap}
+@media(max-width:560px){#buildGuide .bg-card{max-height:90vh}#buildGuide .bg-list{grid-template-columns:1fr}}
+`;document.head.appendChild(buildGuideStyle);
+const buildGuide=document.createElement('div');buildGuide.id='buildGuide';buildGuide.className='hidden';buildGuide.innerHTML=`
+<div class="bg-card" role="dialog" aria-modal="true" aria-labelledby="buildGuideTitle">
+ <div class="bg-head"><div><h2 id="buildGuideTitle">📖 RECETARIO DE BUILDS</h2><div class="bg-sub">Elige las mejoras indicadas al subir de nivel. La sinergia se activa sola cuando completas la receta.</div></div><button class="bg-close" id="buildGuideClose">Cerrar ✕</button></div>
+ <div class="bg-list" id="buildGuideList"></div>
+ <div class="bg-sub" style="margin-top:14px">Consejo: prioriza las piezas de una receta, pero adapta las elecciones a la situación. Las mejoras disponibles aparecen aleatoriamente y no siempre saldrá la que buscas.</div>
+</div>`;
+document.body.appendChild(buildGuide);
+const buildRecipeInfo=[
+{id:'storm',icon:'⚡',name:'Tormenta encadenada',recipe:'Ballesta doble ×2 + Ojo de la cazadora ×2 + Plata Maldita ×1',effect:'Añade un virote y mejora las cadenas eléctricas: saltan cada 3 disparos en vez de cada 5.',tip:'Build de proyectiles y críticos.'},
+{id:'blood',icon:'🩸',name:'Depredador sanguinario',recipe:'Punta de plata ×2 + Capa reforzada ×2 + Regeneración ×1',effect:'Gana robo de vida adicional, activa la curación por bajas y aumenta la regeneración en 0,35 por segundo.',tip:'Build de aguante para partidas largas.'},
+{id:'executioner',icon:'🏹',name:'Verdugo de colosos',recipe:'Punta de plata ×3 + Manos rápidas ×3 + Ojo de la cazadora ×2',effect:'Aumenta el daño total un 18% y añade un 35% de daño contra élites y cañones.',tip:'Build para derretir objetivos resistentes.'},
+{id:'shadow',icon:'💨',name:'Danza de sombras',recipe:'Voltereta afilada ×2 + Voltereta evasiva ×1 + Condena reforzada ×2',effect:'La voltereta obtiene onda explosiva, la invulnerabilidad aumenta al menos a 0,65 s y la recarga de la voltereta mejora un 20% adicional.',tip:'Build móvil con daño en área.'},
+{id:'final',icon:'☀️',name:'Hora final infinita',recipe:'Hora Final ×2 + Ballesta doble ×2',effect:'La definitiva dura 1,5 s más, recarga 4 s antes y añade un virote extra.',tip:'Build para potenciar la definitiva.'}
+];
+function renderBuildGuide(){const list=document.getElementById('buildGuideList');list.innerHTML=buildRecipeInfo.map(r=>{const syn=BUILD_SYNERGIES.find(x=>x.id===r.id),ready=buildSynergies.has(r.id),closeEnough=syn&&syn.check();return '<article class="bg-recipe"><div class="bg-title">'+r.icon+' '+r.name+'</div><div class="bg-ingredients"><b>RECETA</b><br>'+r.recipe+'</div><div class="bg-effect"><b>EFECTO</b><br>'+r.effect+'</div><div class="bg-sub">'+r.tip+'</div><div class="bg-status '+(ready?'ready':'')+'">'+(ready?'✓ SINERGIA DESBLOQUEADA':closeEnough?'¡Requisitos cumplidos! Se activará al elegir una mejora.':'Todavía no desbloqueada en esta partida')+'</div></article>'}).join('');}
+function openBuildGuide(){renderBuildGuide();buildGuide.classList.remove('hidden');}
+function closeBuildGuide(){buildGuide.classList.add('hidden');}
+document.getElementById('buildGuideClose').addEventListener('click',closeBuildGuide);
+buildGuide.addEventListener('click',e=>{if(e.target===buildGuide)closeBuildGuide()});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!buildGuide.classList.contains('hidden'))closeBuildGuide()});
 showLevelUp=function(){const key=level%5===0&&KEYS.some(k=>!keyTaken.has(k.id)),bag=(key?KEYS.filter(k=>!keyTaken.has(k.id)):UPS.filter(u=>(upLv[u.id]||0)<u.max)),picks=[];
  while(picks.length<3&&bag.length){const w=bag.map(u=>key?1:[60,30,10][u.r]);let t=Math.random()*w.reduce((a,b)=>a+b,0),i=0;for(;i<bag.length-1;i++){t-=w[i];if(t<=0)break}picks.push(bag.splice(i,1)[0])}
  const box=$('choices');box.innerHTML='';
@@ -970,6 +1009,9 @@ showLevelUp=function(){const key=level%5===0&&KEYS.some(k=>!keyTaken.has(k.id)),
  if(!$('rerollBtn')){const rb=document.createElement('button');rb.id='rerollBtn';rb.className='secondary';rb.style.marginTop='10px';box.after(rb)}
  const rb=$('rerollBtn');rb.textContent='↻ RELANZAR ('+rerolls+')';rb.style.display=key?'none':'';rb.disabled=rerolls<1;rb.onclick=()=>{if(rerolls>0){rerolls--;showLevelUp()}};
  $('levelup').classList.remove('hidden');
+ const choices=document.getElementById('choices'),card=choices.parentElement;
+ if(!document.getElementById('buildGuideBtn')){const btn=document.createElement('button');btn.id='buildGuideBtn';btn.className='secondary';btn.textContent='📖 VER RECETAS DE SINERGIAS Y SUS EFECTOS';btn.addEventListener('click',openBuildGuide);card.appendChild(btn);}
+ renderBuildGuide();
  if(!showLevelUp._fx){[523,659,784,1046].forEach((f,i)=>tone(f,.18,'triangle',.08,1,i*.08));ring(hero.position.x,hero.position.z,0xf5cc70,10,.8);spark(hero.position.x,1,hero.position.z,0xf5cc70,50,7,8,1.3);vac=2;shake(.3);fovK=6}};
 /* ---------- R: Hora Final ---------- */
 const baseFov=camera.fov;let lastFov=baseFov;
