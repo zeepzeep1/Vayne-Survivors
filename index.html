@@ -1176,6 +1176,17 @@ renderShop=function(){if(!stock)newStock();const sel=[],row=(icon,n,d,p,dis,fn)=
  for(const it of BUILDS.filter(x=>stock.b.includes(x.id)||inv.includes(x.id))){const{cost,use}=recipe(it),got=inv.includes(it.id);h+=row(ic('item',it.id,it.fb),it.n+(got?' ✓':''),it.d+'<br><small style="color:#70e5d1">'+it.from.map(id=>CM[id].n+(use.includes(id)?' ✓':'')).join(' + ')+'</small>',cost,got||coins<cost||inv.length-use.length+1>6,()=>{const r=recipe(it);if(coins<r.cost||inv.length-r.use.length+1>6)return;coins-=r.cost;for(const id of r.use){inv.splice(inv.indexOf(id),1);CM[id].u()}inv.push(it.id);it.f();coinsDirty=true;sfxBuy();vfxBuy()})}
  h+='<h3>ENTRENAMIENTO (se encarece)</h3>';
  for(const t of TRAIN){const p=Math.round(t.base*Math.pow(1.4,trN[t.id]));h+=row(ic('item',t.ic,t.fb),t.n+` (${trN[t.id]}/10)`,t.d,p,trN[t.id]>=10||coins<p,()=>{coins-=p;trN[t.id]++;t.f();coinsDirty=true;sfxBuy()})}
+ h+='<h3>INVENTARIO · VENDER O DESCARTAR</h3>';
+ if(!inv.length)h+='<p style="font-size:11px;color:#9fb0c2">No tienes objetos en el inventario.</p>';
+ for(const id of [...inv]){
+  const it=CM[id]||BUILDS.find(x=>x.id===id)||ARTIFACTS.find(x=>x.id===id);if(!it)continue;
+  const base=it.p||((it.fee||0)+((it.from||[]).reduce((sum,cid)=>sum+(CM[cid]?.p||0),0)));
+  const value=Math.max(1,Math.floor(base*.3));
+  h+=row(ic('item',id,it.fb||'📦'),'Vender: '+it.n,'Recibes el 30% del valor ('+value+' monedas). Deja de contar para recetas.',value,false,()=>{
+   const at=inv.indexOf(id);if(at<0)return;inv.splice(at,1);coins+=value;if(CM[id]?.u)CM[id].u();coinsDirty=true;sfxBuy();renderRecipeTracker();
+  });
+  h+=row('🗑️','Descartar: '+it.n,'Eliminar sin recibir oro.',0,false,()=>{const at=inv.indexOf(id);if(at>=0)inv.splice(at,1);renderRecipeTracker()});
+ }
  h+=row(ic('item','2003','🧪'),POTION.n,POTION.d,POTION.p,coins<POTION.p||hp>=maxHp,()=>{coins-=POTION.p;hp=Math.min(maxHp,hp+maxHp*.45);coinsDirty=true;sfxBuy()});
  h+='</div><div><h3>HABILIDADES (4 huecos · stock de hoy)</h3>';
  for(const a of ABS.filter(x=>stock.a.includes(x.id)||slots.includes(x))){const has=slots.includes(a);h+=row(ic('spell',AI[a.id],a.ic),a.n+(has?' ✓':''),a.d+' · enfriamiento '+a.cd+' s',a.p,has||coins<a.p||sf<0,()=>{coins-=a.p;slots[slots.indexOf(null)]=a;coinsDirty=true;sfxBuy()})}
