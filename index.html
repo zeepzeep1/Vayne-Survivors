@@ -1094,4 +1094,24 @@ function pre2(dt){FRN++;const rate=TUNE.lsRate+maxHp*.008;healB=Math.min(rate*1.
  for(const s of enemyShots){s._t=(s._t||0)-dt;if(s._t<=0){s._t=.07;spark(s.mesh.position.x,s.mesh.position.y,s.mesh.position.z,0xc47bff,1,.4,.4,.7)}}}
 const _u5=update;update=function(dt){if(running&&!paused&&!gameOver)pre2(dt);_u5(dt)};
 const _rs4=reset;reset=function(){_rs4();ROLLINV=0;SHIELDBOW=false;healB=0;slowT=0;slowF=1;sbCD=0;eliteT=0;rrN=0;stock=null;trN.tr1=trN.tr2=trN.tr3=0;for(const g of globs)scene.remove(g.m);globs.length=0;for(const b of beams){scene.remove(b.m);b.m.material.dispose()}beams.length=0};
+// ===== AUTO-CARGA DE GLB DESDE EL SERVIDOR =====
+window.addEventListener('load', () => {
+  const base = './';
+  const load = (path, cb) => {
+    fetch(path).then(r => {
+      if (!r.ok) throw new Error('No encontrado: ' + path);
+      return r.blob();
+    }).then(blob => {
+      const file = new File([blob], path.split('/').pop(), { type: 'model/gltf-binary' });
+      cb(file);
+    }).catch(e => console.warn('No se pudo cargar', path, e.message));
+  };
+  load(base + 'vayne.glb', f => loadAnimatedModel(f));
+  load(base + 'melee_minion_-_chaos.glb', f => loadEnemyModel(f, false));
+  load(base + 'ranged_minion_-_chaos.glb', f => loadEnemyModel(f, true));
+  load(base + 'cannon.glb', f => loadCannon(f));
+  load(base + 'golem.glb', f => loadElite('golem', f));
+  load(base + 'sapo.glb', f => loadElite('gromp', f));
+});
+// ===== FIN AUTO-CARGA =====
 </script></body></html>
