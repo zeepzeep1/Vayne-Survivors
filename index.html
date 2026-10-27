@@ -463,7 +463,14 @@ function makeEnemy(x,z,big=false,mage=false){
  const enemyTemplate=(cannonMode&&cannonModelTemplate)?cannonModelTemplate:(mage?(mageModelTemplate||meleeModelTemplate):meleeModelTemplate);
  if(enemyTemplate){
   const visual=cloneSkeleton(enemyTemplate.scene);
-  if(big)visual.scale.multiplyScalar(1.22);
+  const isGromp = /gromp|sapo/i.test(enemyTemplate.file || '');
+  const baseScale = big ? 1.22 : 1;
+  visual.scale.multiplyScalar(baseScale);
+
+  if (isGromp) {
+    visual.scale.multiplyScalar(1.5); // más grande
+  }
+
   g.add(visual);
   visualMixer=new THREE.AnimationMixer(visual);
   for(const clip of enemyTemplate.animations){
