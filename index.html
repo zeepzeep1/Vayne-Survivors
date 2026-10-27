@@ -1001,8 +1001,6 @@ function closeBuildGuide(){buildGuide.classList.add('hidden');}
 document.getElementById('buildGuideClose').addEventListener('click',closeBuildGuide);
 buildGuide.addEventListener('click',e=>{if(e.target===buildGuide)closeBuildGuide()});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!buildGuide.classList.contains('hidden'))closeBuildGuide()});
-const _buildGuideLevelUp=showLevelUp;
-showLevelUp=function(){_buildGuideLevelUp();const choices=document.getElementById('choices'),card=choices.parentElement;if(!document.getElementById('buildGuideBtn')){const btn=document.createElement('button');btn.id='buildGuideBtn';btn.className='secondary';btn.textContent='📖 VER RECETAS DE SINERGIAS Y SUS EFECTOS';btn.addEventListener('click',openBuildGuide);card.appendChild(btn);}renderBuildGuide();};
 showLevelUp=function(){const key=level%5===0&&KEYS.some(k=>!keyTaken.has(k.id)),bag=(key?KEYS.filter(k=>!keyTaken.has(k.id)):UPS.filter(u=>(upLv[u.id]||0)<u.max)),picks=[];
  while(picks.length<3&&bag.length){const w=bag.map(u=>key?1:[60,30,10][u.r]);let t=Math.random()*w.reduce((a,b)=>a+b,0),i=0;for(;i<bag.length-1;i++){t-=w[i];if(t<=0)break}picks.push(bag.splice(i,1)[0])}
  const box=$('choices');box.innerHTML='';
@@ -1011,6 +1009,9 @@ showLevelUp=function(){const key=level%5===0&&KEYS.some(k=>!keyTaken.has(k.id)),
  if(!$('rerollBtn')){const rb=document.createElement('button');rb.id='rerollBtn';rb.className='secondary';rb.style.marginTop='10px';box.after(rb)}
  const rb=$('rerollBtn');rb.textContent='↻ RELANZAR ('+rerolls+')';rb.style.display=key?'none':'';rb.disabled=rerolls<1;rb.onclick=()=>{if(rerolls>0){rerolls--;showLevelUp()}};
  $('levelup').classList.remove('hidden');
+ const choices=document.getElementById('choices'),card=choices.parentElement;
+ if(!document.getElementById('buildGuideBtn')){const btn=document.createElement('button');btn.id='buildGuideBtn';btn.className='secondary';btn.textContent='📖 VER RECETAS DE SINERGIAS Y SUS EFECTOS';btn.addEventListener('click',openBuildGuide);card.appendChild(btn);}
+ renderBuildGuide();
  if(!showLevelUp._fx){[523,659,784,1046].forEach((f,i)=>tone(f,.18,'triangle',.08,1,i*.08));ring(hero.position.x,hero.position.z,0xf5cc70,10,.8);spark(hero.position.x,1,hero.position.z,0xf5cc70,50,7,8,1.3);vac=2;shake(.3);fovK=6}};
 /* ---------- R: Hora Final ---------- */
 const baseFov=camera.fov;let lastFov=baseFov;
