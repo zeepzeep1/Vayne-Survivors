@@ -16,7 +16,87 @@
 #animDebug{position:fixed;z-index:20;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100vw - 28px));padding:18px;background:#09111df5;border:1px solid #c9ac62;border-radius:10px;box-shadow:0 20px 70px #000c;color:#f5f6fa;pointer-events:auto}#animDebug h3{margin:0 0 8px;color:#e8ce86;font-size:15px}#animDebug p{font-size:12px;color:#bdcddd;line-height:1.5}#animDebug select{width:100%;padding:10px;background:#111e2c;color:white;border:1px solid #8b784c;border-radius:5px;margin:8px 0}#animDebug .dbgActions{display:flex;gap:7px;flex-wrap:wrap}#animDebug .dbgActions button{padding:9px 11px;border-radius:5px}#animDebugStatus{font-size:11px;color:#70e5d1;margin-top:9px;white-space:pre-wrap}
 #riftDiag{position:fixed;left:12px;top:155px;z-index:4;max-width:min(390px,70vw);padding:9px 11px;background:#07111de8;border:1px solid #d5bd7c;color:#f4ecd1;font:10px/1.45 ui-monospace,Consolas,monospace;white-space:pre-wrap;pointer-events:none;box-shadow:0 4px 18px #0008} 
 </style>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+/* ================= FULL BUILD SYSTEM v1 · artefactos, evoluciones y tracker ================= */
+const ARTIFACTS=[
+ {id:'art_storm',n:'Núcleo de la Tormenta',d:'Los críticos alimentan cadenas eléctricas; +1 virote.',p:650,fee:250,from:['1037','1042','1018'],fb:'⚡',f:()=>{statikk=true;extraBolts=Math.min(6,extraBolts+1)}},
+ {id:'art_hunger',n:'Ídolo Voraz',d:'+10% robo de vida y curación por bajas.',p:620,fee:250,from:['1053','1011','1036'],fb:'🩸',f:()=>{lifeSteal+=.10;BLOODKEY=true}},
+ {id:'art_execution',n:'Sello del Verdugo',d'+20% daño a élites y cañones.',p:700,fee:300,from:['1038','1018','1037'],fb:'🏹',f:()=>{COLOSSUS+=.20}},
+ {id:'art_phantom',n:'Núcleo Fantasmal',d:'La voltereta deja una onda de choque.',p:640,fee:250,from:['1001','1042','1018'],fb:'💨',f:()=>{BOOMROLL=true}},
+ {id:'art_hour',n:'Reloj de la Última Hora',d:'+1 s a Hora Final y 2 s menos de recarga.',p:720,fee:300,from:['1037','1042','1018'],fb:'⌛',f:()=>{TUNE.rDur+=1;TUNE.rCD=Math.max(30,TUNE.rCD-2)}},
+ {id:'art_mark',n:'Carcaj Marcador',d:'Las bajas dejan una explosión si hay críticos en la build.',p:600,fee:220,from:['1036','1018','1037'],fb:'🎯',f:()=>{}}
+];
+for(const a of ARTIFACTS){if(!BUILDS.some(x=>x.id===a.id))BUILDS.push(a)}
+const EVOLUTIONS=[
+ {id:'evo_storm',name:'Tormenta perpetua',icon:'🌩️',items:['art_storm','3094','3087'],up:{bolt:2,crit:2},desc:'Críticos encadenan rayos con más frecuencia y marcan el siguiente objetivo.',apply:()=>{statikk=true;chainEvery=Math.min(chainEvery,2);extraBolts=Math.min(6,extraBolts+1)}},
+ {id:'evo_hunger',name:'Hambre insaciable',icon:'🩸',items:['art_hunger','3072'],up:{reg:1,hp:2},desc:'Las bajas curan; al llenar la vida, las bajas consecutivas mejoran temporalmente el robo de vida.',apply:()=>{BLOODKEY=true;lifeSteal=Math.min(.55,lifeSteal+.08);regen+=.35}},
+ {id:'evo_execution',name:'Verdugo del vacío',icon:'🏹',items:['art_execution','3036'],up:{crit:2,silver:2},desc:'Aumenta el daño contra élites y refuerza la pasiva de plata.',apply:()=>{COLOSSUS+=.45;TUNE.procMul+=.35}},
+ {id:'evo_phantom',name:'Danza del apocalipsis',icon:'💥',items:['art_phantom','3046'],up:{q:2,dodge:1},desc:'La voltereta explosiona y devuelve parte de su recarga al abatir enemigos.',apply:()=>{BOOMROLL=true;ROLLINV=Math.max(ROLLINV,.65);TUNE.qCdMul*=.8}},
+ {id:'evo_hour',name:'Eternidad de la Hora Final',icon:'☀️',items:['art_hour','3085'],up:{ult:2,bolt:2},desc:'La R dura más, recarga antes y sus virotes atraviesan más enemigos.',apply:()=>{TUNE.rDur+=1.5;TUNE.rCD=Math.max(30,TUNE.rCD-4);extraBolts=Math.min(6,extraBolts+1)}}
+];
+const evoUnlocked=new Set();
+const itemLabel=id=>(CM[id]||BUILDS.find(x=>x.id===id)||ARTIFACTS.find(x=>x.id===id)||{n:id}).n;
+const upLabel=id=>(UPS.find(x=>x.id===id)||KEYS.find(x=>x.id===id)||{n:id}).n;
+function evoReady(e){return e.items.every(id=>inv.includes(id))&&Object.entries(e.up).every(([id,n])=>(upLv[id]||0)>=n)}
+function evaluateEvolutions(){let changed=false;for(const e of EVOLUTIONS){if(!evoUnlocked.has(e.id)&&evoReady(e)){evoUnlocked.add(e.id);e.apply();changed=true;ring(hero.position.x,hero.position.z,0xf5cc70,9,.65);spark(hero.position.x,1,hero.position.z,0xf5cc70,55,8,8,1.4);tone(784,.16,'triangle',.08,1.6);tone(1175,.22,'triangle',.07,1.4,.1);showMessage('¡EVOLUCIÓN LEGENDARIA: '+e.name.toUpperCase()+'!')}}if(changed)renderRecipeTracker()}
+const trackerStyle=document.createElement('style');trackerStyle.textContent=`
+#recipeTracker{position:fixed;right:12px;top:88px;z-index:8;width:min(290px,36vw);max-height:52vh;color:#eef4fa;font:11px Inter,system-ui,sans-serif;pointer-events:auto}
+#recipeTrackerToggle{width:100%;padding:8px 10px;background:#07111deF;border:1px solid #b69b58;color:#f5cc70;font:900 10px Inter,system-ui,sans-serif;letter-spacing:.12em;text-align:left;cursor:pointer}
+#recipeTrackerBody{max-height:calc(52vh - 34px);overflow:auto;background:#07111deF;border:1px solid #ffffff22;border-top:0;padding:7px}
+#recipeTracker.closed #recipeTrackerBody{display:none}
+.rt-card{padding:7px;margin-bottom:6px;background:#ffffff08;border-left:2px solid #7a8797}
+.rt-card.ready{border-left-color:#8df0c4;background:#8df0c40c}
+.rt-name{font-weight:900;color:#f5cc70;font-size:11px}
+.rt-status{font-size:9px;margin:4px 0;color:#aebed0}
+.rt-status.ready{color:#8df0c4;font-weight:900}
+.rt-line{display:flex;justify-content:space-between;gap:8px;margin:2px 0;color:#c7d2df;font-size:9px}
+.rt-have{color:#8df0c4}.rt-missing{color:#ffb0a7}
+#recipeTracker .rt-legend{color:#8df0c4;font-size:9px;margin:4px 0 8px}
+@media(max-width:700px){#recipeTracker{top:75px;right:5px;width:min(215px,48vw);max-height:43vh}#recipeTrackerBody{max-height:calc(43vh - 34px)}}
+`;document.head.appendChild(trackerStyle);
+const recipeTracker=document.createElement('div');recipeTracker.id='recipeTracker';recipeTracker.className='closed';recipeTracker.innerHTML='<button id="recipeTrackerToggle">🧭 TRACKER DE RECETAS · 0/5</button><div id="recipeTrackerBody"></div>';document.body.appendChild(recipeTracker);
+document.getElementById('recipeTrackerToggle').addEventListener('click',()=>recipeTracker.classList.toggle('closed'));
+function renderRecipeTracker(){
+ const body=document.getElementById('recipeTrackerBody'),toggle=document.getElementById('recipeTrackerToggle');if(!body||!toggle)return;
+ const active=EVOLUTIONS.filter(e=>evoUnlocked.has(e.id)).length;toggle.textContent='🧭 TRACKER DE RECETAS · '+active+'/'+EVOLUTIONS.length;
+ body.innerHTML='<div class="rt-legend">Los ingredientes en verde ya están en tu inventario o build. Las evoluciones se activan automáticamente al completar todo.</div>'+EVOLUTIONS.map(e=>{
+  const ready=evoReady(e),active=evoUnlocked.has(e.id);
+  const items=e.items.map(id=>{const have=inv.includes(id);return '<div class="rt-line"><span>'+itemLabel(id)+'</span><b class="'+(have?'rt-have':'rt-missing')+'">'+(have?'✓ EN INVENTARIO':'○ FALTA')+'</b></div>'}).join('');
+  const ups=Object.entries(e.up).map(([id,n])=>{const got=upLv[id]||0;return '<div class="rt-line"><span>'+upLabel(id)+' · '+got+'/'+n+'</span><b class="'+(got>=n?'rt-have':'rt-missing')+'">'+(got>=n?'✓':'+'+(n-got))+'</b></div>'}).join('');
+  return '<section class="rt-card '+(ready||active?'ready':'')+'"><div class="rt-name">'+e.icon+' '+e.name+'</div><div class="rt-status '+(active?'ready':'')+'">'+(active?'✓ EVOLUCIÓN ACTIVA':ready?'¡LISTA PARA ACTIVAR!':'Progreso de receta')+'</div>'+items+ups+'<div class="rt-status">'+e.desc+'</div></section>';
+ }).join('');
+}
+const _renderShopFull=renderShop;
+renderShop=function(){_renderShopFull();evaluateEvolutions();renderRecipeTracker()};
+const _applySynergiesFull=applyBuildSynergies;
+applyBuildSynergies=function(){_applySynergiesFull();evaluateEvolutions();renderRecipeTracker();if(typeof renderBuildGuide==='function')renderBuildGuide()};
+const _showLevelFull=showLevelUp;
+showLevelUp=function(){_showLevelFull();renderRecipeTracker()};
+const _resetFullBuild=reset;
+reset=function(){_resetFullBuild();evoUnlocked.clear();renderRecipeTracker()};
+const _killFullBuild=killEnemy;let emergentReactionDepth=0,emergentKillCount=0;
+killEnemy=function(e){
+ if(!enemies.includes(e))return;
+ const x=e.position.x,z=e.position.z,wasElite=!!(e.userData.elite||e.userData.cannon);
+ _killFullBuild(e);
+ // Reacciones emergentes por etiquetas: asesinato -> curación y/o explosión.
+ if(emergentReactionDepth<1){
+  emergentReactionDepth++;
+  try{
+   if((inv.includes('art_hunger')||inv.includes('3072'))&&(upLv.reg||0)>=1){const heal=Math.min(maxHp-hp,2.5+(upLv.reg||0));if(heal>0){hp+=heal;num('+'+Math.round(heal),hero.position,'s')}}
+   if((inv.includes('art_phantom')||inv.includes('3046'))&&(upLv.q||0)>=2&&emergentKillCount%3===0){bang(x,z,3.8,0xffc66d,.25);for(const target of [...enemies]){if(Math.hypot(target.position.x-x,target.position.z-z)<3.8){target.userData.hp-=Math.max(1,damage*1.6);if(target.userData.hp<=0)killEnemy(target)}}}
+   if(wasElite&&inv.includes('art_execution')){const heal=Math.min(maxHp-hp,5);hp+=heal;if(heal>0)num('+'+Math.round(heal),hero.position,'s')}
+  }finally{emergentReactionDepth--}
+ }
+ emergentKillCount++;
+};
+const _castRFull=castR;
+castR=function(){const wasReady=rCD<=0&&rT<=0&&!paused&&!gameOver;_castRFull();if(wasReady&&evoUnlocked.has('evo_hour')){for(const e of [...enemies]){const d=Math.hypot(e.position.x-hero.position.x,e.position.z-hero.position.z);if(d<12){e.userData.hp-=damage*2;if(e.userData.hp<=0)killEnemy(e)}}}}
+const _makeBoltFull=makeBolt;
+makeBolt=function(from,target,condemn,empowered){_makeBoltFull(from,target,condemn,empowered);const b=bolts[bolts.length-1];if(b&&from===hero&&!condemn&&b.critical&&inv.includes('art_mark')){b.damage*=1.2;b._markedShot=true}};
+renderRecipeTracker();
+
+</script>
 </head>
 <body>
 <div id="riftDiag">DIAGNÓSTICO GRIETA: esperando carga del GLB…</div>
