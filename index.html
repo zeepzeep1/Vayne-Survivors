@@ -1176,6 +1176,32 @@ renderShop=function(){if(!stock)newStock();const sel=[],row=(icon,n,d,p,dis,fn)=
  for(const it of BUILDS.filter(x=>stock.b.includes(x.id)||inv.includes(x.id))){const{cost,use}=recipe(it),got=inv.includes(it.id);h+=row(ic('item',it.id,it.fb),it.n+(got?' ✓':''),it.d+'<br><small style="color:#70e5d1">'+it.from.map(id=>CM[id].n+(use.includes(id)?' ✓':'')).join(' + ')+'</small>',cost,got||coins<cost||inv.length-use.length+1>6,()=>{const r=recipe(it);if(coins<r.cost||inv.length-r.use.length+1>6)return;coins-=r.cost;for(const id of r.use){inv.splice(inv.indexOf(id),1);CM[id].u()}inv.push(it.id);it.f();coinsDirty=true;sfxBuy();vfxBuy()})}
  h+='<h3>ENTRENAMIENTO (se encarece)</h3>';
  for(const t of TRAIN){const p=Math.round(t.base*Math.pow(1.4,trN[t.id]));h+=row(ic('item',t.ic,t.fb),t.n+` (${trN[t.id]}/10)`,t.d,p,trN[t.id]>=10||coins<p,()=>{coins-=p;trN[t.id]++;t.f();coinsDirty=true;sfxBuy()})}
+ const undoSoldItem=id=>{
+  const undo={
+   '3031':()=>{damage/=1.2;critChance=Math.max(.05,critChance-.25)},
+   '3072':()=>{damage/=1.25;lifeSteal=Math.max(0,lifeSteal-.12)},
+   '3006':()=>{fireRate/=.82;moveSpeed/=1.1},
+   '3046':()=>{moveSpeed/=1.12;fireRate/=.88;damageReduction=Math.max(0,damageReduction-.1)},
+   '3094':()=>{fireRate/=.8;critChance=Math.max(.05,critChance-.1);extraBolts=Math.max(0,extraBolts-1)},
+   '3087':()=>{statikk=false},
+   '3085':()=>{extraBolts=Math.max(0,extraBolts-1);fireRate/=.9},
+   '3036':()=>{COLOSSUS=Math.max(0,COLOSSUS-.35)},
+   '3153':()=>{damage/=1.12;fireRate/=.88;lifeSteal=Math.max(0,lifeSteal-.08)},
+   '3026':()=>{guardian=false},
+   '3033':()=>{TUNE.procMul=Math.max(.1,TUNE.procMul-.35);fireRate/=.92},
+   '6675':()=>{critChance=Math.max(.05,critChance-.12);TUNE.qCdMul/=.8;TUNE.eCD/=.8},
+   '6671':()=>{moveSpeed/=1.1;BOOMROLL=false},
+   '6673':()=>{SHIELDBOW=false},
+   '3508':()=>{damage/=1.15;critChance=Math.max(.05,critChance-.12);fireRate/=.9},
+   'art_storm':()=>{statikk=false;extraBolts=Math.max(0,extraBolts-1)},
+   'art_hunger':()=>{lifeSteal=Math.max(0,lifeSteal-.1);BLOODKEY=false},
+   'art_execution':()=>{COLOSSUS=Math.max(0,COLOSSUS-.2)},
+   'art_phantom':()=>{BOOMROLL=false},
+   'art_hour':()=>{TUNE.rDur=Math.max(1,TUNE.rDur-1);TUNE.rCD+=2},
+   'art_mark':()=>{}
+  };
+  if(undo[id])undo[id]();else if(CM[id]?.u)CM[id].u();
+ };
  h+='<h3>INVENTARIO · VENDER O DESCARTAR</h3>';
  if(!inv.length)h+='<p style="font-size:11px;color:#9fb0c2">No tienes objetos en el inventario.</p>';
  for(const id of [...inv]){
@@ -1183,7 +1209,7 @@ renderShop=function(){if(!stock)newStock();const sel=[],row=(icon,n,d,p,dis,fn)=
   const base=it.p||((it.fee||0)+((it.from||[]).reduce((sum,cid)=>sum+(CM[cid]?.p||0),0)));
   const value=Math.max(1,Math.floor(base*.3));
   h+=row(ic('item',id,it.fb||'📦'),'Vender: '+it.n,'Recibes el 30% del valor ('+value+' monedas). Deja de contar para recetas.',value,false,()=>{
-   const at=inv.indexOf(id);if(at<0)return;inv.splice(at,1);coins+=value;if(CM[id]?.u)CM[id].u();coinsDirty=true;sfxBuy();renderRecipeTracker();
+   const at=inv.indexOf(id);if(at<0)return;inv.splice(at,1);coins+=value;undoSoldItem(id);coinsDirty=true;sfxBuy();renderRecipeTracker();
   });
   h+=row('🗑️','Descartar: '+it.n,'Eliminar sin recibir oro.',0,false,()=>{const at=inv.indexOf(id);if(at>=0)inv.splice(at,1);renderRecipeTracker()});
  }
